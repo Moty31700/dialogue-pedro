@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>רוזנקרנץ וגילדנשטרן – Jeu AnaLex</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f1a;--panel:#161929;--panel2:#1e2235;
+  --gold:#c9a84c;--red:#c0392b;--blue:#4a9edd;--green:#27ae60;
+  --text:#e8dcc8;--muted:#8a8fa8;--border:#2e3350;--r:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;min-height:100vh;direction:rtl}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.9}}
+header{position:sticky;top:0;z-index:100;background:rgba(13,15,26,.95);border-bottom:1px solid var(--border);padding:.7rem 1.5rem;display:flex;align-items:center;gap:1rem;backdrop-filter:blur(8px)}
+.logo{font-family:'Frank Ruhl Libre',serif;font-size:1.2rem;color:var(--gold);font-weight:900;white-space:nowrap}
+nav{display:flex;gap:.4rem;flex-wrap:wrap;flex:1;justify-content:center}
+nav button{background:transparent;border:1px solid var(--border);color:var(--muted);padding:.4rem .9rem;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.85rem;transition:all .2s}
+nav button.active,nav button:hover{background:var(--gold);color:#0d0f1a;border-color:var(--gold);font-weight:700}
+main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:2rem 1rem}
+.section{display:none}.section.active{display:block}
+h2{font-family:'Frank Ruhl Libre',serif;font-size:1.8rem;color:var(--gold);margin-bottom:1.2rem;text-align:center}
+/* DIALOGUE */
+.dialogue{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;line-height:2.2}
+.line{margin-bottom:.8rem;font-size:1.05rem}
+.speaker{font-weight:700;color:var(--gold);margin-left:.4rem}
+.speaker.pedro{color:#e67e22}.speaker.gilden{color:var(--blue)}
+.fr{color:var(--muted);font-size:.85rem;font-style:italic;display:block;margin-right:1.5rem}
+.speak-btn{background:none;border:none;cursor:pointer;font-size:.9rem;padding:0 .2rem;opacity:.4;transition:opacity .2s;vertical-align:middle}
+.speak-btn:hover{opacity:1}
+/* LEXIQUE */
+.filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;justify-content:center}
+.filter-btn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:.3rem .8rem;border-radius:16px;cursor:pointer;font-size:.82rem;font-family:'Heebo',sans-serif;transition:all .2s}
+.filter-btn.on{background:var(--gold);color:#0d0f1a;border-color:var(--gold);font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.8rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);height:150px;cursor:pointer;perspective:600px;position:relative}
+.card-inner{width:100%;height:100%;transform-style:preserve-3d;transition:transform .45s;position:relative}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card-front,.card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.8rem;text-align:center}
+.card-front{background:var(--panel)}.card-back{background:var(--panel2);transform:rotateY(180deg)}
+.card-word{font-family:'Frank Ruhl Libre',serif;font-size:1.5rem;color:var(--text);margin-bottom:.3rem}
+.card-root{font-size:.75rem;color:var(--gold);margin-bottom:.3rem}
+.badge{font-size:.7rem;padding:.2rem .5rem;border-radius:10px;background:var(--panel2);color:var(--muted);border:1px solid var(--border)}
+.card-trans{font-size:.88rem;color:var(--text);margin-bottom:.4rem;line-height:1.3}
+.card-morph{font-size:.72rem;color:var(--muted);line-height:1.4}
+.card-speak{position:absolute;top:.3rem;left:.3rem;background:none;border:none;cursor:pointer;font-size:.9rem;opacity:.35;transition:opacity .2s;z-index:10}
+.card-speak:hover{opacity:1}
+/* QUIZ */
+.quiz-modes{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.2rem}
+.mode-btn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:.4rem 1rem;border-radius:20px;cursor:pointer;font-size:.82rem;font-family:'Heebo',sans-serif;transition:all .2s}
+.mode-btn.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
+.quiz-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;min-height:280px}
+.quiz-q{font-family:'Frank Ruhl Libre',serif;font-size:1.6rem;margin-bottom:1.5rem;color:var(--text);line-height:1.5}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;max-width:500px;margin:0 auto}
+.opt{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:.8rem;border-radius:8px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.9rem;transition:all .2s}
+.opt:hover{border-color:var(--gold);color:var(--gold)}
+.opt.correct{background:rgba(39,174,96,.2);border-color:var(--green);color:var(--green)}
+.opt.wrong{background:rgba(192,57,43,.2);border-color:var(--red);color:var(--red)}
+.quiz-feedback{margin-top:1rem;font-size:.9rem;min-height:1.4rem;color:var(--muted)}
+.quiz-score{display:flex;gap:2rem;justify-content:center;margin-bottom:1rem}
+.sq{text-align:center}.sq-n{font-size:1.6rem;font-weight:700;color:var(--gold)}.sq-l{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.next-btn{margin-top:1rem;background:var(--gold);color:#0d0f1a;border:none;padding:.6rem 1.5rem;border-radius:20px;cursor:pointer;font-weight:700;font-family:'Heebo',sans-serif;display:none}
+.next-btn.show{display:inline-block}
+/* RECON */
+.recon-select{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:1rem}
+.rs-btn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:.3rem .7rem;border-radius:16px;cursor:pointer;font-size:.8rem;font-family:'Heebo',sans-serif;transition:all .2s}
+.rs-btn.on{background:var(--gold);color:#0d0f1a;border-color:var(--gold)}
+.recon-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem}
+.recon-fr{color:var(--muted);font-style:italic;margin-bottom:1rem;font-size:.95rem;text-align:center}
+.tiles{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:1rem;min-height:48px}
+.tile{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:.4rem .7rem;border-radius:8px;cursor:pointer;font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;transition:all .2s;user-select:none;display:inline-flex;align-items:center;gap:.3rem}
+.tile:hover{border-color:var(--gold);color:var(--gold)}
+.tile.placed{opacity:.3;pointer-events:none}
+.drop-zone{min-height:60px;border:2px dashed var(--border);border-radius:8px;padding:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;transition:all .3s}
+.drop-zone.correct-zone{border-color:var(--green);background:rgba(39,174,96,.05)}
+.drop-zone.wrong-zone{border-color:var(--red);background:rgba(192,57,43,.05)}
+.recon-result{font-size:.9rem;text-align:center;min-height:1.2rem;margin-bottom:.8rem}
+.recon-result.ok{color:var(--green)}.recon-result.ko{color:var(--red)}
+.recon-btns{display:flex;gap:.7rem;justify-content:center}
+.rbtn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:.5rem 1.2rem;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.85rem;transition:all .2s}
+.rbtn.primary{background:var(--gold);color:#0d0f1a;border-color:var(--gold);font-weight:700}
+.rbtn:hover{border-color:var(--gold);color:var(--gold)}.rbtn.primary:hover{opacity:.85;color:#0d0f1a}
+/* ISRIM */
+.isrim-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.isrim-grid,.quiz-opts{grid-template-columns:1fr}}
+.isrim-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem}
+.isrim-card h3{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--gold);margin-bottom:.7rem}
+.isrim-card p{font-size:.86rem;color:var(--muted);line-height:1.7;margin-bottom:.3rem}
+.isrim-full{grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<header>
+  <div class="logo">רוזנקרנץ וגילדנשטרן</div>
+  <nav>
+    <button class="active" onclick="show('text',this)">📜 הדיאלוג</button>
+    <button onclick="show('lex',this)">📖 לקסיקון</button>
+    <button onclick="show('quiz',this)">🎯 חידון</button>
+    <button onclick="show('recon',this)">🧩 בניית משפטים</button>
+    <button onclick="show('isrim',this)">💡 ניתוח</button>
+  </nav>
+</header>
+<main>
+
+<section class="section active" id="text">
+  <h2>הדיאלוג המלא</h2>
+  <div style="text-align:center;margin-bottom:1.2rem">
+    <a href="https://www.youtube.com/watch?v=mvfvgF6Ggms" target="_blank"
+       style="display:inline-block;color:var(--gold);font-size:1rem;text-decoration:none;border:1px solid var(--gold);padding:.5rem 1.4rem;border-radius:20px;font-family:Heebo,sans-serif">
+      ▶ צפה בסרטון ב-YouTube
+    </a>
+  </div>
+  <div class="dialogue" id="dialogue-content"></div>
+</section>
+
+<section class="section" id="lex">
+  <h2>לקסיקון</h2>
+  <div class="filters" id="filters"></div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section class="section" id="quiz">
+  <h2>חידון</h2>
+  <div class="quiz-score">
+    <div class="sq"><div class="sq-n" id="sq-score">0</div><div class="sq-l">נכון</div></div>
+    <div class="sq"><div class="sq-n" id="sq-total">0</div><div class="sq-l">סה"כ</div></div>
+    <div class="sq"><div class="sq-n" id="sq-pct">—</div><div class="sq-l">%</div></div>
+  </div>
+  <div class="quiz-modes" id="quiz-modes"></div>
+  <div class="quiz-box">
+    <div class="quiz-q" id="quiz-q">לחץ כדי להתחיל</div>
+    <div class="quiz-opts" id="quiz-opts"></div>
+    <div class="quiz-feedback" id="quiz-fb"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">הבא ←</button>
+  </div>
+</section>
+
+<section class="section" id="recon">
+  <h2>בניית משפטים</h2>
+  <div class="recon-select" id="recon-select"></div>
+  <div class="recon-box">
+    <div class="recon-fr" id="recon-fr"></div>
+    <div class="tiles" id="recon-tiles"></div>
+    <div class="drop-zone" id="drop-zone"></div>
+    <div class="recon-result" id="recon-result"></div>
+    <div class="recon-btns">
+      <button class="rbtn primary" onclick="checkRecon()">בדוק ✓</button>
+      <button class="rbtn" onclick="resetRecon()">נסה שוב ↺</button>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="isrim">
+  <h2>ניתוח — ISRIM</h2>
+  <div class="isrim-grid" id="isrim-grid"></div>
+</section>
+
+</main>
+<script>
+// ── DATA ──────────────────────────────────
+const dialogue=[
+  {r:'r',sp:'רוזנקרנץ',he:'קבל אחד — איזה הוא עשיר? כובשת? צרו? לא. נו, איזה הוא עשיר?',fr:"C'est quoi être riche ? Conquérant ? Puissant ? Non. Alors c'est quoi ?"},
+  {r:'g',sp:'גילדנשטרן',he:'אני לא יודע. הַשָּׂמֵחַ בְּחֶלְקוֹ.',fr:'Je ne sais pas. Celui qui se réjouit de sa part.'},
+  {r:'r',sp:'רוזנקרנץ',he:'מה זה? לא הגיוני.',fr:"Quoi ? Ça n'a pas de sens."},
+  {r:'g',sp:'גילדנשטרן',he:'זה חוכמת חז"ל. זה לא צריך להיות הגיוני. אולי זה הפוך — איזה הוא שמח בחלקו? העשיר.',fr:"C'est la sagesse talmudique. Ça n'a pas besoin d'avoir du sens. Peut-être c'est l'inverse — qui est heureux de sa part ? Le riche."},
+  {r:'r',sp:'רוזנקרנץ',he:'ממש לא.',fr:'Absolument pas.'},
+  {r:'g',sp:'גילדנשטרן',he:'אני יודע. שאני, נגיד — אם אני הייתי עשיר, הייתי מאוד שמח בחלקי.',fr:"Je sais. Moi, par exemple — si j'étais riche, je serais très heureux de ma part."},
+  {r:'r',sp:'רוזנקרנץ',he:'תדע לך שיש מחקרים שמראים שהעשירים הם דווקא מאוד מאוד אומללים.',fr:'Sache que des études montrent que les riches sont justement très, très malheureux.'},
+  {r:'g',sp:'גילדנשטרן',he:'אתה יודע איך אומרים: מַרְבֶּה נְכָסִים, מַרְבֶּה דְּאָגָה.',fr:'Tu sais ce qu\'on dit : Plus de biens, plus de soucis.'},
+  {r:'r',sp:'רוזנקרנץ',he:'קראתי איפשהו שהעשירים הם במקום שני במדד האומללות.',fr:"J'ai lu quelque part que les riches sont en deuxième position dans l'indice du malheur."},
+  {r:'g',sp:'גילדנשטרן',he:'אין סיכוי.',fr:'Impossible.'},
+  {r:'r',sp:'רוזנקרנץ',he:'נשבע לך שקראתי את זה. מקום שני.',fr:"Je te jure que je l'ai lu. Deuxième place."},
+  {r:'p',sp:'פדרו',he:'Pedro! Pedro! זה קרה. Que bueno! Amigo! Tuto! Reh!',fr:"Pedro ! Pedro ! Ça s'est passé. Super ! Ami ! Tout ! Allez !"},
+  {r:'r',sp:'רוזנקרנץ',he:'תקשיב, רגע — פדרו, האם היית אומר שאושר בעושר הוא ערובה לאושר באמת?',fr:'Écoute, une seconde — Pedro, dirais-tu que la richesse est une garantie de bonheur réel ?'},
+  {r:'g',sp:'גילדנשטרן',he:'ערובה? כן. אל תבלבל אותי. לא, כי יש גם רובה — של סנטה קלאוס ועשן — שלא יתבלבל.',fr:"Garantie ? Oui. Ne me confonds pas. Non, parce qu'il y a aussi une carabine — celle du Père Noël — pour ne pas confondre."},
+  {r:'g',sp:'גילדנשטרן',he:'אני יודע איך לדבר איתו. פדרו, אתה מאושר?',fr:'Je sais comment lui parler. Pedro, tu es heureux ?'},
+  {r:'p',sp:'פדרו',he:'Si, si! פדרו מוי מאושר.',fr:'Oui, oui ! Pedro très heureux.'},
+  {r:'g',sp:'גילדנשטרן',he:'פדרו, למה?',fr:'Pedro, pourquoi ?'},
+  {r:'p',sp:'פדרו',he:'לא יודע. לא חשבתי על זה.',fr:"Je ne sais pas. Je n'y ai pas pensé."},
+  {r:'g',sp:'גילדנשטרן',he:'בדיוק בגלל זה אתה מאושר — בגלל שאתה לא חושב. כי ברגע שחושבים, מתחילים להבין. וברגע שמבינים, נעשים אומללים.',fr:"C'est exactement pour ça que tu es heureux — parce que tu ne penses pas. Car dès qu'on pense, on commence à comprendre. Et dès qu'on comprend, on devient malheureux."},
+  {r:'r',sp:'רוזנקרנץ',he:'מה אתה אומר פה, כלומר — רוסו? שהמפתח לאושר הוא מינימום שכל?',fr:"Qu'est-ce que tu dis là, c'est-à-dire — Rousseau ? Que la clé du bonheur c'est un minimum d'intellect ?"},
+  {r:'g',sp:'גילדנשטרן',he:'בדיוק. אז בגלל זה אנחנו יותר אומללים — כי אנחנו יותר חכמים.',fr:"Exactement. Alors c'est pour ça qu'on est plus malheureux — parce qu'on est plus intelligents."},
+  {r:'r',sp:'רוזנקרנץ',he:'מהגויים?',fr:'Que les non-Juifs ?'},
+  {r:'g',sp:'גילדנשטרן',he:'בדיוק. אתם אומללים כי פדרו קושר אתכם לקיר ומרביץ לכם.',fr:'Exactement. Vous êtes malheureux parce que Pedro vous attache au mur et vous frappe.'},
+  {r:'p',sp:'פדרו',he:'Si! אה, כן, גם זה.',fr:'Oui ! Ah, oui, ça aussi.'},
+  {r:'g',sp:'גילדנשטרן',he:'פדרו, amigo, מתי ארוחת הצהריים?',fr:'Pedro, ami, c\'est quand le déjeuner ?'},
+  {r:'p',sp:'פדרו',he:'באוגוסט. אתן לכל מה שתיקח, הכל אתן — רק שתשכח.',fr:'En août. Je te donnerai tout ce que tu veux — à condition que tu oublies.'},
+  {r:'r',sp:'רוזנקרנץ',he:'אז מה — העשירים הם מקום שני במדד האומללות?',fr:"Alors quoi — les riches sont en deuxième place dans l'indice du malheur ?"},
+  {r:'g',sp:'גילדנשטרן',he:'כן, קראתי את זה גם. אני הופתעתי.',fr:"Oui, j'ai lu ça aussi. J'ai été surpris."},
+  {r:'r',sp:'רוזנקרנץ',he:'ומי מקום ראשון?',fr:'Et qui est en première place ?'},
+  {r:'g',sp:'גילדנשטרן',he:'העניים.',fr:'Les pauvres.'},
+  {r:'r',sp:'רוזנקרנץ',he:'פחות מפתיע.',fr:'Moins surprenant.'},
+  {r:'g',sp:'גילדנשטרן',he:'פחות.',fr:'Moins.'},
+];
+
+const lexicon=[
+  {he:'עשיר',root:'ע.ש.ר',cat:'שם עצם',fr:'riche / richesse',morph:'שם תואר / שם עצם'},
+  {he:'שמח בחלקו',root:'ש.מ.ח',cat:'ביטוי',fr:'heureux de sa part',morph:'ביטוי תלמודי — פרקי אבות'},
+  {he:'חוכמת חז"ל',root:'ח.כ.מ',cat:'ביטוי',fr:'sagesse talmudique',morph:'חכמינו זכרונם לברכה'},
+  {he:'אומלל',root:'א.מ.ל',cat:'שם תואר',fr:'malheureux / misérable',morph:'שם תואר, זכר יחיד'},
+  {he:'אומללות',root:'א.מ.ל',cat:'שם עצם',fr:'malheur / misère',morph:'שם עצם נקבה'},
+  {he:'מרבה נכסים',root:'נ.כ.ס',cat:'ביטוי',fr:'plus de biens matériels',morph:'ביטוי מפרקי אבות ד:א'},
+  {he:'מרבה דאגה',root:'ד.א.ג',cat:'ביטוי',fr:'plus de soucis',morph:'ביטוי מפרקי אבות ד:א'},
+  {he:'ערובה',root:'ע.ר.ב',cat:'שם עצם',fr:'garantie / caution',morph:'שם עצם נקבה'},
+  {he:'אושר',root:'א.ש.ר',cat:'שם עצם',fr:'bonheur / félicité',morph:'שם עצם זכר'},
+  {he:'מאושר',root:'א.ש.ר',cat:'שם תואר',fr:'heureux / béni',morph:'שם תואר, זכר יחיד'},
+  {he:'מדד',root:'מ.ד.ד',cat:'שם עצם',fr:'indice / indicateur',morph:'שם עצם זכר'},
+  {he:'חכם',root:'ח.כ.מ',cat:'שם תואר',fr:'intelligent / sage',morph:'שם תואר, זכר יחיד'},
+  {he:'להבין',root:'ב.י.נ',cat:'פועל',fr:'comprendre',morph:'בניין הפעיל, שם הפועל'},
+  {he:'לחשוב',root:'ח.ש.ב',cat:'פועל',fr:'penser / réfléchir',morph:'בניין קל, שם הפועל'},
+  {he:'נשבע',root:'ש.ב.ע',cat:'פועל',fr:'jurer / promettre',morph:'בניין נפעל, עבר'},
+  {he:'הופתעתי',root:'פ.ת.ע',cat:'פועל',fr:"j'ai été surpris",morph:'בניין הופעל, עבר, גוף ראשון'},
+  {he:'קושר',root:'ק.ש.ר',cat:'פועל',fr:'attache / lie',morph:'בניין פיעל, הווה'},
+  {he:'מינימום שכל',root:'ש.כ.ל',cat:'ביטוי',fr:"minimum d'intellect",morph:'ביטוי פילוסופי — Rousseau'},
+  {he:'עניים',root:'ע.נ.י',cat:'שם עצם',fr:'pauvres / les démunis',morph:'שם עצם, זכר רבים'},
+  {he:'כלומר — רוסו',root:'—',cat:'ביטוי',fr:'Rousseau (כ"ר = כלומר רוסו)',morph:'קיצור: כ = כלומר'},
+];
+
+const categories=['הכל','שם עצם','שם תואר','פועל','ביטוי'];
+
+const quizModes=[
+  {id:'he-fr',label:'עברית → צרפתית'},
+  {id:'fr-he',label:'צרפתית → עברית'},
+  {id:'root',label:'שורש'},
+  {id:'morph',label:'מורפולוגיה'},
+];
+
+const sentences=[
+  {fr:'Celui qui se réjouit de sa part.',he:['השמח','בחלקו']},
+  {fr:'Plus de biens, plus de soucis.',he:['מרבה','נכסים','מרבה','דאגה']},
+  {fr:"Les riches sont en deuxième place dans l'indice du malheur.",he:['העשירים','הם','במקום','שני','במדד','האומללות']},
+  {fr:"Dès qu'on pense, on commence à comprendre.",he:['ברגע','שחושבים','מתחילים','להבין']},
+  {fr:"Dès qu'on comprend, on devient malheureux.",he:['וברגע','שמבינים','נעשים','אומללים']},
+  {fr:"La clé du bonheur c'est un minimum d'intellect.",he:['המפתח','לאושר','הוא','מינימום','שכל']},
+  {fr:'Moins surprenant.',he:['פחות','מפתיע']},
+];
+
+const isrimData=[
+  {icon:'💡',title:'רעיון מרכזי — Idée centrale',full:true,items:[
+    'הדיאלוג מציג שאלה פילוסופית קלאסית: האם עושר מביא אושר?',
+    'הפרדוקס המרכזי: ככל שאדם חכם יותר, כך הוא אומלל יותר.',
+    "Le dialogue pose la question classique : la richesse mène-t-elle au bonheur ? Plus on est intelligent, plus on est malheureux — c'est le paradoxe central.",
+  ]},
+  {icon:'🏗',title:'מבנה — Structure',items:[
+    'שלוש דמויות: רוזנקרנץ, גילדנשטרן, פדרו.',
+    'פדרו משמש כניגוד — מאושר כי אינו חושב.',
+    'מבנה: ויכוח — בדיחה — הסקת מסקנה.',
+  ]},
+  {icon:'🎭',title:'רטוריקה — Rhétorique',items:[
+    'שימוש בפרובים תלמודיים (פרקי אבות ד:א).',
+    'אירוניה: הפילוסופים כבולים לקיר ומוכים.',
+    'הומור שחור: ארוחת צהריים באוגוסט.',
+  ]},
+  {icon:'🔍',title:'השלכות — Implications',items:[
+    'ביקורת על האינטלקטואליזם היהודי.',
+    'אקו לרוסו: הציוויליזציה מקור הסבל.',
+    "Écho à Rousseau : la civilisation comme source de souffrance.",
+  ]},
+  {icon:'📐',title:'מורפולוגיה — Morphologie',items:[
+    'בניין נפעל: נעשים, נשבע — פעיל-סביל.',
+    'בניין הופעל: הופתעתי — הפתעה מחוץ לשליטה.',
+    'ביטויים קנויים: השמח בחלקו, מרבה נכסים.',
+  ]},
+];
+
+// ── STARS ─────────────────────────────────
+(function(){
+  const s=document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const d=document.createElement('div');
+    d.className='star';
+    d.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation-delay:'+Math.random()*3+'s;animation-duration:'+(2+Math.random()*3)+'s';
+    s.appendChild(d);
+  }
+})();
+
+// ── SPEECH ────────────────────────────────
+function speak(text){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='he-IL';
+  u.rate=0.85;
+  const voices=window.speechSynthesis.getVoices();
+  const hev=voices.find(function(v){return v.lang&&v.lang.startsWith('he');});
+  if(hev) u.voice=hev;
+  window.speechSynthesis.speak(u);
+}
+if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged=function(){};
+
+// ── NAV ───────────────────────────────────
+function show(id,btn){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── MODULE 1 : DIALOGUE ───────────────────
+(function(){
+  const c=document.getElementById('dialogue-content');
+  dialogue.forEach(function(l){
+    const div=document.createElement('div');
+    div.className='line';
+    const sc=l.r==='p'?'pedro':l.r==='g'?'gilden':'';
+    const spk=document.createElement('span');
+    spk.className='speaker '+sc;
+    spk.textContent=l.sp+':';
+    const txt=document.createTextNode(' '+l.he+' ');
+    const btn=document.createElement('button');
+    btn.className='speak-btn';
+    btn.title='הקשב';
+    btn.textContent='🔊';
+    (function(text){btn.onclick=function(e){e.stopPropagation();speak(text);};})(l.he);
+    const fr=document.createElement('span');
+    fr.className='fr';
+    fr.textContent=l.fr;
+    div.appendChild(spk);
+    div.appendChild(txt);
+    div.appendChild(btn);
+    div.appendChild(document.createElement('br'));
+    div.appendChild(fr);
+    c.appendChild(div);
+  });
+})();
+
+// ── MODULE 2 : LEXIQUE ────────────────────
+(function(){
+  const fDiv=document.getElementById('filters');
+  const cDiv=document.getElementById('cards');
+  let active='הכל';
+  categories.forEach(function(cat){
+    const b=document.createElement('button');
+    b.className='filter-btn'+(cat==='הכל'?' on':'');
+    b.textContent=cat;
+    b.onclick=function(){
+      active=cat;
+      document.querySelectorAll('.filter-btn').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      render();
+    };
+    fDiv.appendChild(b);
+  });
+  function render(){
+    cDiv.innerHTML='';
+    const list=active==='הכל'?lexicon:lexicon.filter(function(w){return w.cat===active;});
+    list.forEach(function(w){
+      const card=document.createElement('div');
+      card.className='card';
+      // speak button
+      const sb=document.createElement('button');
+      sb.className='card-speak';
+      sb.title='הקשב';
+      sb.textContent='🔊';
+      (function(text){sb.onclick=function(e){e.stopPropagation();speak(text);};})(w.he);
+      // front
+      const front=document.createElement('div');
+      front.className='card-front';
+      const word=document.createElement('div');
+      word.className='card-word';
+      word.textContent=w.he;
+      const root=document.createElement('div');
+      root.className='card-root';
+      root.textContent='√ '+w.root;
+      const badge=document.createElement('div');
+      badge.className='badge';
+      badge.textContent=w.cat;
+      front.appendChild(sb);
+      front.appendChild(word);
+      front.appendChild(root);
+      front.appendChild(badge);
+      // back
+      const back=document.createElement('div');
+      back.className='card-back';
+      const trans=document.createElement('div');
+      trans.className='card-trans';
+      trans.textContent=w.fr;
+      const morph=document.createElement('div');
+      morph.className='card-morph';
+      morph.textContent=w.morph;
+      back.appendChild(trans);
+      back.appendChild(morph);
+      // inner
+      const inner=document.createElement('div');
+      inner.className='card-inner';
+      inner.appendChild(front);
+      inner.appendChild(back);
+      card.appendChild(inner);
+      card.onclick=function(){card.classList.toggle('flipped');};
+      cDiv.appendChild(card);
+    });
+  }
+  render();
+})();
+
+// ── MODULE 3 : QUIZ ───────────────────────
+let qScore=0,qTotal=0,qMode='he-fr',qAnswered=false;
+(function(){
+  const md=document.getElementById('quiz-modes');
+  quizModes.forEach(function(m){
+    const b=document.createElement('button');
+    b.className='mode-btn'+(m.id===qMode?' on':'');
+    b.textContent=m.label;
+    b.onclick=function(){
+      qMode=m.id;
+      document.querySelectorAll('.mode-btn').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      nextQ();
+    };
+    md.appendChild(b);
+  });
+  nextQ();
+})();
+
+function nextQ(){
+  qAnswered=false;
+  document.getElementById('next-btn').classList.remove('show');
+  document.getElementById('quiz-fb').textContent='';
+  const item=lexicon[Math.floor(Math.random()*lexicon.length)];
+  const opts=document.getElementById('quiz-opts');
+  opts.innerHTML='';
+  let q,correct,pool;
+  if(qMode==='he-fr'){q=item.he;correct=item.fr;pool=lexicon.filter(function(x){return x.he!==item.he;}).map(function(x){return x.fr;});}
+  else if(qMode==='fr-he'){q=item.fr;correct=item.he;pool=lexicon.filter(function(x){return x.he!==item.he;}).map(function(x){return x.he;});}
+  else if(qMode==='root'){q=item.he;correct=item.root;pool=lexicon.filter(function(x){return x.he!==item.he;}).map(function(x){return x.root;});}
+  else{q=item.he;correct=item.morph;pool=lexicon.filter(function(x){return x.he!==item.he;}).map(function(x){return x.morph;});}
+  // speak button next to question
+  const qDiv=document.getElementById('quiz-q');
+  qDiv.textContent='';
+  qDiv.appendChild(document.createTextNode(q+' '));
+  if(qMode==='he-fr'||qMode==='root'||qMode==='morph'){
+    const sb=document.createElement('button');
+    sb.className='speak-btn';sb.textContent='🔊';
+    (function(t){sb.onclick=function(){speak(t);};})(item.he);
+    qDiv.appendChild(sb);
+  }
+  const wrong=[...new Set(pool)].sort(function(){return Math.random()-.5;}).slice(0,3);
+  const all=[correct,...wrong].sort(function(){return Math.random()-.5;});
+  all.forEach(function(o){
+    const b=document.createElement('button');
+    b.className='opt';
+    b.textContent=o;
+    (function(opt,isC){b.onclick=function(){answer(b,isC,correct);};})(o,o===correct);
+    opts.appendChild(b);
+  });
+}
+
+function answer(btn,ok,correct){
+  if(qAnswered)return;
+  qAnswered=true;qTotal++;
+  if(ok){qScore++;document.getElementById('quiz-fb').textContent='✓ נכון!';}
+  else{
+    btn.classList.add('wrong');
+    document.getElementById('quiz-fb').textContent='✗ התשובה הנכונה: '+correct;
+    document.querySelectorAll('.opt').forEach(function(b){if(b.textContent===correct)b.classList.add('correct');});
+  }
+  if(ok)btn.classList.add('correct');
+  document.getElementById('sq-score').textContent=qScore;
+  document.getElementById('sq-total').textContent=qTotal;
+  document.getElementById('sq-pct').textContent=Math.round(qScore/qTotal*100)+'%';
+  document.getElementById('next-btn').classList.add('show');
+}
+
+// ── MODULE 4 : RECONSTRUCT ────────────────
+let reconIdx=0;
+(function(){
+  const sel=document.getElementById('recon-select');
+  sentences.forEach(function(s,i){
+    const b=document.createElement('button');
+    b.className='rs-btn'+(i===0?' on':'');
+    b.textContent=String(i+1);
+    (function(idx){b.onclick=function(){
+      reconIdx=idx;
+      document.querySelectorAll('.rs-btn').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      loadSentence(idx);
+    };})(i);
+    sel.appendChild(b);
+  });
+  loadSentence(0);
+})();
+
+function loadSentence(i){
+  const s=sentences[i];
+  document.getElementById('recon-fr').textContent=s.fr;
+  document.getElementById('recon-result').textContent='';
+  const dz=document.getElementById('drop-zone');
+  dz.className='drop-zone';dz.innerHTML='';
+  const shuffled=[...s.he].sort(function(){return Math.random()-.5;});
+  const tDiv=document.getElementById('recon-tiles');
+  tDiv.innerHTML='';
+  shuffled.forEach(function(w){
+    const t=document.createElement('div');
+    t.className='tile';
+    t.appendChild(document.createTextNode(w));
+    const sb=document.createElement('button');
+    sb.textContent='🔊';
+    sb.style.cssText='background:none;border:none;cursor:pointer;font-size:.8rem;opacity:.45';
+    (function(word){sb.onclick=function(e){e.stopPropagation();speak(word);};})(w);
+    t.appendChild(sb);
+    (function(word,tile){
+      tile.onclick=function(){
+        if(tile.classList.contains('placed'))return;
+        tile.classList.add('placed');
+        const p=document.createElement('div');
+        p.style.cssText='background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:.4rem .7rem;border-radius:8px;font-family:Frank Ruhl Libre,serif;font-size:1.1rem;cursor:pointer';
+        p.textContent=word;
+        p.onclick=function(){p.remove();tile.classList.remove('placed');};
+        dz.appendChild(p);
+      };
+    })(w,t);
+    tDiv.appendChild(t);
+  });
+}
+
+function checkRecon(){
+  const dz=document.getElementById('drop-zone');
+  const placed=[...dz.children].map(function(t){return t.textContent;});
+  const correct=sentences[reconIdx].he;
+  const res=document.getElementById('recon-result');
+  if(JSON.stringify(placed)===JSON.stringify(correct)){
+    res.className='recon-result ok';res.textContent='✓ הסדר נכון!';
+    dz.className='drop-zone correct-zone';
+  }else{
+    res.className='recon-result ko';res.textContent='✗ הסדר אינו נכון. המשפט: '+correct.join(' ');
+    dz.className='drop-zone wrong-zone';
+  }
+}
+function resetRecon(){loadSentence(reconIdx);}
+
+// ── MODULE 5 : ISRIM ─────────────────────
+(function(){
+  const g=document.getElementById('isrim-grid');
+  isrimData.forEach(function(card){
+    const div=document.createElement('div');
+    div.className='isrim-card'+(card.full?' isrim-full':'');
+    const h=document.createElement('h3');
+    h.textContent=card.icon+' '+card.title;
+    div.appendChild(h);
+    card.items.forEach(function(item){
+      const p=document.createElement('p');
+      p.textContent=item;
+      div.appendChild(p);
+    });
+    g.appendChild(div);
+  });
+})();
+</script>
+</body>
+</html>
